@@ -1,6 +1,25 @@
 #!/bin/bash
 
-# Uniform monad API for the Bash-Monad project
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#
+# Uniform monad API for the BAM! (Bourne Again Monad!) project
 #
 # Generic monad operations that dispatch on the type tag embedded in each
 # value (see core/value.bash for the encoding). These functions work with any
@@ -15,31 +34,30 @@
 #   print_value VALUE    - human-readable printing (defined in value.bash)
 #
 
-# Source the core value encoding (provides _value_kind, print_value, ERR_* codes, etc.)
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/value.bash"
 # Source the registered monad types
-# shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
-source "$(dirname "${BASH_SOURCE[0]}")/either.bash"
-# shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
-source "$(dirname "${BASH_SOURCE[0]}")/list.bash"
-# shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
-source "$(dirname "${BASH_SOURCE[0]}")/maybe.bash"
-
-# The registered monad types, space-separated
-MONAD_TYPES="either list maybe"
+MONAD_TYPES=(either list maybe)
+for tag in "${MONAD_TYPES[@]}"; do
+  # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
+  source "$(dirname "${BASH_SOURCE[0]}")/${tag}.bash"
+done
 
 # The MonadPlus flavour of each registered type, as tag:flavour entries:
 # "distribution" for choice monads (List satisfies left distribution),
 # "catch" for failure monads (Maybe and Either satisfy left catch instead)
-MONADPLUS_FLAVORS="either:catch list:distribution maybe:catch"
+MONADPLUS_FLAVORS=(either:catch list:distribution maybe:catch)
 
 _is_monad_type() {
   local type="$1"
-  case " $MONAD_TYPES " in
-  *" $type "*) return 0 ;;
-  *) return 1 ;;
-  esac
+
+  local t
+  for t in "${MONAD_TYPES[@]}"; do
+    if [ "$t" = "$type" ]; then
+      return 0
+    fi
+  done
+  return 1
 }
 
 _require_monad_type() {
@@ -51,13 +69,14 @@ _require_monad_type() {
     echo "require_monad_type: expected a monad type value, got: $value" >&2
     return "$ERR_UNKNOWN_TYPE"
   fi
+  return 0
 }
 
 _monadplus_flavor() {
   local type="$1"
-  local entry
 
-  for entry in $MONADPLUS_FLAVORS; do
+  local entry
+  for entry in "${MONADPLUS_FLAVORS[@]}"; do
     if [ "${entry%%:*}" = "$type" ]; then
       echo "${entry##*:}"
       return 0

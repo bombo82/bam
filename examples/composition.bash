@@ -1,5 +1,24 @@
 #!/bin/bash
 
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#
 # Examples of composition and nesting with the uniform monad API
 #
 # Composition: chaining Kleisli functions (a -> M b) into pipelines, and the
@@ -10,9 +29,9 @@
 #
 # Each example prints the commands that produce the result (prefixed with $),
 # followed by the output of each command.
+#
 
 # shellcheck disable=SC2329 # Helper functions are invoked by name through bind/map
-# Source the uniform monad API
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash"
 
@@ -95,7 +114,6 @@ run bind "$numbers" pair_with
 run print_value "$result"
 
 echo -e "\nExample 3: bind is join . map"
-# Chaining with bind is the same as mapping and then flattening
 increment_maybe() {
   local value="$1"
   unit maybe $((value + 1))

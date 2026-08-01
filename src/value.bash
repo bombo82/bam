@@ -1,6 +1,25 @@
 #!/bin/bash
 
-# Core value encoding for the Bash-Monad project
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#
+# Core value encoding for the BAM! (Bourne Again Monad!) project
 #
 # Monadic values are serialized as s-expression-like strings:
 #   (maybe nothing)  (maybe just V)
@@ -16,6 +35,7 @@
 # one value per line. The unescape of atoms happens only when printing.
 #
 # This file uses only Bash builtins: no external dependencies.
+#
 
 # ---------------------------------------------------------------------------
 # Error status codes (two digits: tens = category, units = specific error)
@@ -50,7 +70,7 @@ _atom_from_string() {
   local str="$1"
 
   if [ -n "$str" ] && [[ "$str" != *[[:space:]\(\)\"\\]* ]]; then
-    echo "$str" # bare atom
+    echo "$str"
   else
     local escaped="${str//\\/\\\\}"
     escaped="${escaped//\"/\\\"}"
@@ -65,7 +85,7 @@ _atom_to_string() {
   local atom="$1"
 
   if [[ "$atom" != \"*\" ]]; then
-    echo "$atom" # bare atom
+    echo "$atom"
     return
   fi
 
@@ -437,9 +457,9 @@ print_value() {
     raw=$(_atom_to_string "$value")
     canonical=$(_atom_from_string "$raw")
     if [ "$canonical" = "$raw" ]; then
-      echo "$raw" # bare atom: print as-is
+      echo "$raw"
     else
-      echo "$canonical" # print the quoted form for an unambiguous output
+      echo "$canonical"
     fi
     ;;
   *)

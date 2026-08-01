@@ -1,22 +1,34 @@
 #!/bin/bash
 
-# List monad-specific API for the Bash-Monad project
 #
-# Specific monad operations by type. These functions work only with a single
-# registered monad type and require a type_specific prefix:
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
 #
-#   list_create VALUE1 VALUE2 ... VALUEN - create a list from multiple values
-#   list_filter  - filters the elements of a list based on a predicate function
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-# Implementation of a List monad on the core value encoding
+#
+# List monad on the core value encoding — type-specific API
 #
 # Values: (list) for the empty list, (list V1 V2 ... Vn) otherwise, where
 # each Vi is any serialized value (atom or monadic value), so lists can
 # contain other monadic values (nesting).
 #
-# This file contains the basic list monad functions
+#   list_create VALUE1 VALUE2 ... VALUEN - create a list from multiple values
+#   list_filter  - filters the elements of a list based on a predicate function
+#
 
-# Constant for the empty list
 EMPTY_LIST="(list)"
 
 # Creates a list from multiple values
@@ -39,6 +51,7 @@ list_create() {
     fi
   done
   result+=")"
+
   echo "$result"
 }
 
@@ -67,6 +80,7 @@ list_filter() {
     fi
   done
   result+=")"
+
   echo "$result"
 }
 
@@ -94,11 +108,11 @@ _list_map() {
     fi
   done
   result+=")"
+
   echo "$result"
 }
 
-# Internal helper for join function (μ), the flattening operation of the monad
-# Concatenates the elements of a list of lists
+# Flattens a list of lists (join, μ) by concatenating its elements
 # Strict contract: fails (non-zero status) if any element is not a list
 _list_join() {
   local list="$1"
@@ -110,20 +124,25 @@ _list_join() {
   local outer_parts=("${PARTS[@]}")
   for child in "${outer_parts[@]}"; do
     child_kind=$(_value_kind "$child")
-    if [ "$child_kind" = "list" ]; then
+    case "$child_kind" in
+    list)
       _sexpr_load_children "$child" || return $?
       for sub in "${PARTS[@]}"; do
         result+=" $sub"
       done
-    elif [ "$child_kind" = "atom" ]; then
+      ;;
+    atom)
       echo "list_join: expected a list of lists, got element: $child" >&2
       return "$ERR_JOIN_FLAT"
-    else
+      ;;
+    *)
       echo "list_join: nested element has a different tag: $child" >&2
       return "$ERR_JOIN_TAG"
-    fi
+      ;;
+    esac
   done
   result+=")"
+
   echo "$result"
 }
 
@@ -131,8 +150,7 @@ _list_mzero() {
   echo "$EMPTY_LIST"
 }
 
-# Internal helper for mplus function (mplus of the MonadPlus structure)
-# Concatenates two lists
+# mplus of the MonadPlus structure: concatenates two lists
 _list_mplus() {
   local list1="$1"
   local list2="$2"
@@ -146,6 +164,7 @@ _list_mplus() {
     done
   done
   result+=")"
+
   echo "$result"
 }
 
@@ -165,5 +184,6 @@ _list_print_value() {
     fi
   done
   result+="]"
+
   echo "$result"
 }

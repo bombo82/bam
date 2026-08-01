@@ -1,9 +1,25 @@
 #!/bin/bash
 
-# Utility functions for testing
-# This file contains common functions used across test files
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-# Global variables for test tracking
+# Common utilities shared by all test suites
+
 TEST_COUNT=0
 PASSED_COUNT=0
 FAILED_COUNT=0
@@ -17,7 +33,8 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-# Function to run a test and track results
+# Compares EXPECTED with ACTUAL, prints the outcome, and updates the counters
+# Usage: run_test TEST_NAME EXPECTED ACTUAL
 run_test() {
   local test_name="$1"
   local expected="$2"
@@ -34,13 +51,11 @@ run_test() {
   fi
 }
 
-# Function to print a passed test result
 print_passed_test_result() {
   local test_name="$1"
   echo -e "${GREEN}✓${RESET} ${test_name} - ${GREEN}PASSED${RESET}"
 }
 
-# Function to print a failed test result
 print_failed_test_result() {
   local test_name="$1"
   local expected="$2"
@@ -51,12 +66,12 @@ print_failed_test_result() {
   echo -e "  ${BOLD}Actual:${RESET}   '${actual}'"
 }
 
-# Function to print a separator line
 print_separator() {
   echo -e "${BLUE}----------------------------------------${RESET}"
 }
 
-# Function to start a new test section with a title
+# Prints a numbered section title and increments SECTION_COUNT
+# Usage: start_test_section TITLE
 start_test_section() {
   local section_title="$1"
 
@@ -66,7 +81,8 @@ start_test_section() {
   print_separator
 }
 
-# Function to print a test header
+# Prints the suite banner; FILE_NAME is optional
+# Usage: print_test_header TITLE [FILE_NAME]
 print_test_header() {
   local title="$1"
   local file_name="$2"
@@ -77,7 +93,8 @@ print_test_header() {
   echo -e "${BLUE}==================================================${RESET}"
 }
 
-# Function to print test summary with detailed statistics
+# Prints counters and pass percentage; returns 1 if any test failed, 0 otherwise
+# Usage: print_test_summary TITLE
 print_test_summary() {
   local title="$1"
   local pass_percentage=0

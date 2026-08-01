@@ -1,16 +1,31 @@
 #!/bin/bash
 
-# Tests for the uniform monad API
-# This file contains tests for the tag-based dispatch of the generic
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# Tests for the uniform monad API: tag-based dispatch of the generic
 # monad operations (unit, bind, map, join, mzero, mplus)
 
-# Source the uniform monad API and test utilities
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash" >/dev/null 2>&1
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/test_utils.bash"
 
-# Test the unit function
 test_unit() {
   start_test_section "Unit function"
 
@@ -22,7 +37,6 @@ test_unit() {
   run_test "unit with unknown type" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Test the bind function
 test_bind() {
   start_test_section "Bind function"
 
@@ -43,7 +57,6 @@ test_bind() {
   run_test "bind with unknown tag" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Test the map function
 test_map() {
   start_test_section "Map function"
 
@@ -64,7 +77,6 @@ test_map() {
   run_test "map with unknown tag" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Test the join function
 test_join() {
   start_test_section "Join function"
 
@@ -80,7 +92,6 @@ test_join() {
   run_test "join with unknown tag" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Test mzero and mplus
 test_monadplus() {
   start_test_section "Mzero and mplus"
 
@@ -100,7 +111,6 @@ test_monadplus() {
   run_test "mplus first right wins" "(either right 1)" "$result"
 }
 
-# Test the monadplus_flavor registration
 test_monadplus_flavor() {
   start_test_section "MonadPlus flavor registration"
 
@@ -120,7 +130,6 @@ test_monadplus_flavor() {
   run_test "flavor of unknown type" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Test error propagation and classification through the dispatcher
 test_error_propagation() {
   start_test_section "Error propagation through the dispatcher"
 
@@ -157,12 +166,10 @@ test_error_propagation() {
   map "(either right 10)" this_function_does_not_exist >/dev/null 2>&1
   run_test "map with unknown function" "$ERR_UNKNOWN_FUNCTION" "$?"
 
-  # mplus with an unregistered tag on both values
   mplus "(foo 1)" "(foo 2)" >/dev/null 2>&1
   run_test "mplus with unknown tag" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Main function to run all tests
 run_monad_api_tests() {
   local file_name="$1"
   print_test_header "Testing the uniform monad API" "$file_name"
@@ -178,7 +185,6 @@ run_monad_api_tests() {
   print_test_summary "Uniform monad API"
 }
 
-# Run the tests if this script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_monad_api_tests "$0"
 fi

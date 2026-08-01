@@ -1,6 +1,6 @@
 # Usage
 
-This document shows how to use the Bash-Monad library in your own scripts. It starts with the information that is valid for every monad (file dependencies, the value encoding, the monad API with its contract and error handling, semantics and limitations) and then covers the specifics of each monad with examples.
+This document shows how to use the BAM! library in your own scripts. It starts with the information that is valid for every monad (file dependencies, the value encoding, the monad API with its contract and error handling, semantics and limitations) and then covers the specifics of each monad with examples.
 
 All monadic values use the structured encoding described in [The Value Encoding](#the-value-encoding) below: `(maybe just V)` / `(maybe nothing)`, `(list V1 V2 ...)` / `(list)`, `(either right V)` / `(either left V)`, where `V` is a serialized atom or another monadic value. The constructors (`maybe_just`, `list_create`, `either_left`/`either_right`, `unit`) automatically serialize raw strings; there is no need to invoke serialization helpers manually.
 

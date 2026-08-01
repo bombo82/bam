@@ -1,15 +1,30 @@
 #!/bin/bash
 
-# Tests for the Maybe monad implementation on the core value encoding
-# This file contains tests for the basic monad functions
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-# Source the uniform monad API and test utilities
+# Tests for the Maybe monad implementation on the core value encoding
+
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash" >/dev/null 2>&1
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/test_utils.bash"
 
-# Test constructors and accessors
 test_constructors() {
   start_test_section "Constructors and accessors"
 
@@ -27,7 +42,6 @@ test_constructors() {
   maybe_is_nothing "(maybe just 5)"
   run_test "maybe_is_nothing with Just" "1" "$?"
 
-  # maybe_is_just predicate
   maybe_is_just "(maybe just 5)"
   run_test "maybe_is_just with Just" "0" "$?"
 
@@ -56,28 +70,23 @@ test_constructors() {
   unit maybe "(ciao" >/dev/null 2>&1
   run_test "unit rejects malformed input" "$ERR_UNIT_INPUT" "$?"
 
-  # unit accepts a compound value (nesting)
   local result
   result=$(unit maybe "(list 1 2)")
   run_test "unit with compound value" "(maybe just (list 1 2))" "$result"
 }
 
-# Test accessor validation
 test_accessor_validation() {
   start_test_section "Accessor validation"
 
-  # maybe_unwrap fails with a contract error on a non-Maybe value
   assert_contract_error "maybe_unwrap with wrong tag" "$ERR_WRONG_TAG" maybe_unwrap "(list 1)"
 
-  # maybe_unwrap propagates parse errors on malformed input
   assert_contract_error "maybe_unwrap with malformed input" "$ERR_PARSE_PARENS" maybe_unwrap "(maybe just"
 }
 
-# Test bind operations
 test_bind_operations() {
   start_test_section "Bind operations"
 
-  # A Kleisli function that adds 1 (bind requires functions of type a -> M b)
+  # A Kleisli function (a -> M b), as required by bind
   add_one_maybe() {
     local value="$1"
     unit maybe $((value + 1))
@@ -93,22 +102,18 @@ test_bind_operations() {
     fi
   }
 
-  # Test bind with valid value
   local result
   result=$(bind "(maybe just 10)" add_one_maybe)
   run_test "bind with value" "(maybe just 11)" "$result"
 
-  # Test bind with NOTHING
   local result
   result=$(bind "$NOTHING" add_one_maybe)
   run_test "bind with NOTHING" "$NOTHING" "$result"
 
-  # Test bind with a failing function
   local result
   result=$(bind "(maybe just 0)" half_maybe)
   run_test "bind with failing function" "$NOTHING" "$result"
 
-  # Test bind with extra arguments
   add_maybe_n() {
     local value="$1"
     local addend="$2"
@@ -118,13 +123,12 @@ test_bind_operations() {
   result=$(bind "(maybe just 10)" add_maybe_n 5)
   run_test "bind with extra args" "(maybe just 15)" "$result"
 
-  # Test chain of binds
   local result
   result=$(bind "(maybe just 10)" add_one_maybe)
   result=$(bind "$result" add_one_maybe)
   run_test "chain of binds" "(maybe just 12)" "$result"
 
-  # Test bind rejects a plain scalar function (not a Kleisli arrow)
+  # Strict contract: bind rejects a plain scalar function (not a Kleisli arrow)
   scalar_fn() {
     local value="$1"
     echo $((value + 1))
@@ -148,27 +152,22 @@ test_bind_operations() {
   run_test "join with different tag fails" "$ERR_JOIN_TAG" "$?"
 }
 
-# Test map function
 test_map_function() {
   start_test_section "Map function"
 
-  # For these tests, we create a simple function that doubles a value
   double() {
     local value="$1"
     echo $((value * 2))
   }
 
-  # Test map with valid value
   local result
   result=$(map "(maybe just 10)" double)
   run_test "map with value" "(maybe just 20)" "$result"
 
-  # Test map with NOTHING
   local result
   result=$(map "$NOTHING" double)
   run_test "map with NOTHING" "$NOTHING" "$result"
 
-  # Test map with a function returning a string that needs quoting
   greet() {
     echo "hello world"
   }
@@ -176,8 +175,7 @@ test_map_function() {
   result=$(map "(maybe just 10)" greet)
   run_test "map with string result" '(maybe just "hello world")' "$result"
 
-  # Test map with a function returning an empty string: the empty string is
-  # a first-class value and becomes the empty atom ""
+  # The empty string is a first-class value and becomes the empty atom ""
   empty_func() {
     echo ""
   }
@@ -203,7 +201,7 @@ test_map_function() {
   result=$(map "(maybe just 10)" raw_paren)
   run_test "map with raw result starting with paren" '(maybe just "(ciao")' "$result"
 
-  # Test bind passes the raw payload of a quoted atom to the function
+  # bind passes the raw payload of a quoted atom to the function
   kleisli_identity() {
     local value="$1"
     unit maybe "$(_atom_from_string "$value")"
@@ -213,7 +211,6 @@ test_map_function() {
   run_test "bind with quoted atom payload" '(maybe just "a b")' "$result"
 }
 
-# Test join function
 test_join_function() {
   start_test_section "Join function"
 
@@ -236,7 +233,6 @@ test_join_function() {
   run_test "join with NOTHING" "$NOTHING" "$result"
 }
 
-# Test MonadPlus functions
 test_monadplus_functions() {
   start_test_section "MonadPlus functions"
 
@@ -244,23 +240,19 @@ test_monadplus_functions() {
   result=$(mzero maybe)
   run_test "mzero" "$NOTHING" "$result"
 
-  # Test mplus with first value present (first wins)
   local result
   result=$(mplus "(maybe just 1)" "(maybe just 2)")
   run_test "mplus with first value present" "(maybe just 1)" "$result"
 
-  # Test mplus with first value Nothing (second wins)
   local result
   result=$(mplus "$NOTHING" "(maybe just 2)")
   run_test "mplus with first value Nothing" "(maybe just 2)" "$result"
 
-  # Test mplus with both values Nothing
   local result
   result=$(mplus "$NOTHING" "$NOTHING")
   run_test "mplus with both Nothing" "$NOTHING" "$result"
 }
 
-# Main function to run all tests
 run_maybe_monad_tests() {
   local file_name="$1"
   print_test_header "Testing Maybe monad functions" "$file_name"
@@ -275,7 +267,6 @@ run_maybe_monad_tests() {
   print_test_summary "Maybe monad functions"
 }
 
-# Run the tests if this script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_maybe_monad_tests "$0"
 fi

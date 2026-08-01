@@ -1,5 +1,24 @@
 #!/bin/bash
 
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#
 # Generic monad laws tests through the uniform monad API
 #
 # This file verifies, for every registered monad type (MONAD_TYPES):
@@ -12,8 +31,8 @@
 #
 # All fixtures are built through the uniform API (unit, mzero, bind, map,
 # join, mplus), so the only per-type input is the type name itself.
+#
 
-# Source the uniform monad API and test utilities
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash" >/dev/null 2>&1
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
@@ -129,7 +148,6 @@ run_laws_for_type() {
 
   start_test_section "Left identity for $type (uniform API)"
 
-  # Left identity: return a >>= f is the same as f a
   echo -e "Law: ${BOLD}return a >>= f is the same as f a${RESET}"
 
   local value=5
@@ -151,7 +169,6 @@ run_laws_for_type() {
 
   start_test_section "Right identity for $type (uniform API)"
 
-  # Right identity: m >>= return is the same as m
   echo -e "Law: ${BOLD}m >>= return is the same as m${RESET}"
 
   local monad_value
@@ -167,7 +184,6 @@ run_laws_for_type() {
 
   start_test_section "Associativity for $type (uniform API)"
 
-  # Associativity: (m >>= f) >>= g is the same as m >>= (\x -> f x >>= g)
   echo -e "Law: ${BOLD}(m >>= f) >>= g is the same as m >>= (\\x -> f x >>= g)${RESET}"
 
   monad_value=$(unit "$type" 5)
@@ -187,7 +203,6 @@ run_laws_for_type() {
 
   start_test_section "Functor laws for $type (uniform API)"
 
-  # Identity: fmap id m is the same as m
   echo -e "Law: ${BOLD}fmap id m is the same as m${RESET}"
 
   monad_value=$(unit "$type" 5)
@@ -200,7 +215,6 @@ run_laws_for_type() {
   right_side="$monad_value"
   assert_law "$type: functor identity with empty value" "$right_side" "$left_side"
 
-  # Composition: fmap (f . g) m is the same as fmap f (fmap g m)
   echo -e "Law: ${BOLD}fmap (f . g) m is the same as fmap f (fmap g m)${RESET}"
 
   monad_value=$(unit "$type" 5)
@@ -215,7 +229,6 @@ run_laws_for_type() {
 
   start_test_section "Functor-monad consistency for $type (uniform API)"
 
-  # Consistency: fmap f m is the same as m >>= (return . f)
   echo -e "Law: ${BOLD}fmap f m is the same as m >>= (return . f)${RESET}"
 
   monad_value=$(unit "$type" 5)
@@ -228,7 +241,6 @@ run_laws_for_type() {
   right_side=$(bind "$monad_value" law_return_add_one)
   assert_law "$type: consistency fmap/bind with empty value" "$right_side" "$left_side"
 
-  # Consistency: m >>= f is the same as join (fmap f m)
   echo -e "Law: ${BOLD}m >>= f is the same as join (fmap f m)${RESET}"
 
   monad_value=$(unit "$type" 5)
@@ -243,7 +255,6 @@ run_laws_for_type() {
 
   start_test_section "MonadPlus laws for $type (uniform API)"
 
-  # Identity: mzero ⊕ m = m and m ⊕ mzero = m
   echo -e "Law: ${BOLD}mzero ⊕ m is the same as m, and m ⊕ mzero is the same as m${RESET}"
 
   monad_value=$(unit "$type" 5)
@@ -255,7 +266,6 @@ run_laws_for_type() {
   right_side="$monad_value"
   assert_law "$type: MonadPlus right identity" "$right_side" "$left_side"
 
-  # Associativity: (m ⊕ n) ⊕ p is the same as m ⊕ (n ⊕ p)
   echo -e "Law: ${BOLD}(m ⊕ n) ⊕ p is the same as m ⊕ (n ⊕ p)${RESET}"
 
   local value_n
@@ -271,7 +281,6 @@ run_laws_for_type() {
   right_side=$(mplus "$empty_value" "$(mplus "$value_n" "$value_p")")
   assert_law "$type: MonadPlus associativity with empty value" "$right_side" "$left_side"
 
-  # Left zero: mzero >>= f is the same as mzero
   echo -e "Law: ${BOLD}mzero >>= f is the same as mzero${RESET}"
 
   left_side=$(bind "$empty_value" law_kleisli_inc)
@@ -280,14 +289,12 @@ run_laws_for_type() {
 
   # The fourth law depends on the MonadPlus flavour of the type
   if [ "$(_monadplus_flavor "$type")" = "distribution" ]; then
-    # Left distribution: (m ⊕ n) >>= f is the same as (m >>= f) ⊕ (n >>= f)
     echo -e "Law: ${BOLD}(m ⊕ n) >>= f is the same as (m >>= f) ⊕ (n >>= f)${RESET}"
 
     left_side=$(bind "$(mplus "$monad_value" "$value_n")" law_kleisli_inc)
     right_side=$(mplus "$(bind "$monad_value" law_kleisli_inc)" "$(bind "$value_n" law_kleisli_inc)")
     assert_law "$type: MonadPlus left distribution" "$right_side" "$left_side"
   else
-    # Left catch: return a ⊕ m is the same as return a
     echo -e "Law: ${BOLD}return a ⊕ m is the same as return a${RESET}"
 
     left_side=$(mplus "$monad_value" "$value_n")
@@ -301,20 +308,17 @@ run_laws_for_type() {
 
   start_test_section "Strictness contract for $type (uniform API)"
 
-  # join requires a properly nested value: join on a flat value fails
   echo -e "Law: ${BOLD}join requires M (M a); it fails on M a${RESET}"
 
   monad_value=$(unit "$type" 5)
   join "$monad_value" >/dev/null 2>&1
   run_test "$type: join on a flat value fails" "$ERR_JOIN_FLAT" "$?"
 
-  # bind requires a Kleisli function (a -> M b): a plain scalar function fails
   echo -e "Law: ${BOLD}bind requires f :: a -> M b; a scalar function fails${RESET}"
 
   bind "$monad_value" law_scalar >/dev/null 2>&1
   run_test "$type: bind with scalar function fails" "$ERR_JOIN_FLAT" "$?"
 
-  # bind requires the function to return the SAME monad type
   echo -e "Law: ${BOLD}bind requires f to return the same monad type${RESET}"
 
   bind "$monad_value" law_wrong_monad >/dev/null 2>&1
@@ -326,20 +330,18 @@ run_laws_for_type() {
   run_test "$type: map with scalar function still works" "$right_side" "$left_side"
 }
 
-# Main function to run all tests
 run_generic_laws_tests() {
   local file_name="$1"
   print_test_header "Testing monad laws through the uniform API" "$file_name"
 
   local type
-  for type in $MONAD_TYPES; do
+  for type in "${MONAD_TYPES[@]}"; do
     run_laws_for_type "$type"
   done
 
   print_test_summary "Generic monad laws"
 }
 
-# Run the tests if this script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_generic_laws_tests "$0"
 fi

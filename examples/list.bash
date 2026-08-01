@@ -1,10 +1,30 @@
 #!/bin/bash
 
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#
 # Examples of using the List monad through the uniform monad API
 # (unit, bind, map, join, mzero, mplus, print_value work with any monad type)
 #
 # Each example prints the commands that produce the result (prefixed with $),
 # followed by the output of each command.
+#
 
 # Source the uniform monad API (also sources the List monad implementation)
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
@@ -18,16 +38,14 @@ run() {
   echo "$result"
 }
 
-# Example functions that work with the List monad
-
-# Function to square a number
+# Square a number
 # Usage: square VALUE
 square() {
   local value="$1"
   echo $((value * value))
 }
 
-# Function to get divisors of a number
+# Get the divisors of a number (mzero if none)
 # Usage: get_divisors VALUE
 get_divisors() {
   local value="$1"
@@ -46,7 +64,7 @@ get_divisors() {
   fi
 }
 
-# Function to check if a number is even
+# Check if a number is even
 # Predicate convention: 0 = true, 1 = false, >= 10 = error (propagated by list_filter)
 # Usage: is_even VALUE
 is_even() {
@@ -58,7 +76,7 @@ is_even() {
   return $((value % 2))
 }
 
-# Function to check if a number is odd
+# Check if a number is odd
 # Usage: is_odd VALUE
 is_odd() {
   local value="$1"
@@ -68,8 +86,6 @@ is_odd() {
   fi
   return $(((value + 1) % 2))
 }
-
-# Examples
 
 echo "Example 1: Wrapping a value with unit"
 run unit list 10
@@ -103,17 +119,12 @@ run bind "$result" get_divisors
 run print_value "$result"
 
 echo -e "\nExample 7: Chaining map and filter"
-# Start with numbers 1-5, square them, then filter for even results
 run list_create 1 2 3 4 5
 run map "$result" square
 run list_filter "$result" is_even
 run print_value "$result"
 
 echo -e "\nExample 8: Complex chain of operations"
-# Start with numbers 1-10
-# Filter for odd numbers
-# Get divisors of each number
-# Filter for even divisors
 run list_create 1 2 3 4 5 6 7 8 9 10
 run list_filter "$result" is_odd
 run bind "$result" get_divisors

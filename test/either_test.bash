@@ -1,16 +1,31 @@
 #!/bin/bash
 
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 # Tests for the Either monad implementation
-# This file contains tests for the basic either monad functions
 
 # shellcheck disable=SC2329 # Per-type operations are invoked dynamically by the dispatcher
-# Source the uniform monad API and test utilities
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash" >/dev/null 2>&1
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/test_utils.bash"
 
-# Test constructors and accessors
 test_constructors() {
   start_test_section "Constructors and accessors"
 
@@ -46,7 +61,6 @@ test_constructors() {
   result=$(either_unwrap "(either left error)")
   run_test "either_unwrap left" "error" "$result"
 
-  # Nested values
   local result
   result=$(either_right "(list 1 2)")
   run_test "either_right with nested list" "(either right (list 1 2))" "$result"
@@ -58,37 +72,29 @@ test_constructors() {
   unit either "(ciao" >/dev/null 2>&1
   run_test "unit rejects malformed input" "$ERR_UNIT_INPUT" "$?"
 
-  # unit accepts a compound value (nesting)
   local result
   result=$(unit either "(list 1 2)")
   run_test "unit with compound value" "(either right (list 1 2))" "$result"
 }
 
-# Test accessor validation
 test_accessor_validation() {
   start_test_section "Accessor validation"
 
-  # either_unwrap fails with a contract error on a non-Either value
   assert_contract_error "either_unwrap with wrong tag" "$ERR_WRONG_TAG" either_unwrap "(maybe just 1)"
 
-  # either_is_left fails with a contract error on a non-Either value
   assert_contract_error "either_is_left with wrong tag" "$ERR_WRONG_TAG" either_is_left "(list 1)"
 
-  # either_is_right fails with a contract error on a non-Either value
   assert_contract_error "either_is_right with wrong tag" "$ERR_WRONG_TAG" either_is_right "(list 1)"
 }
 
-# Test return, bind, map, join
 test_monad_functions() {
   start_test_section "Monad functions"
 
-  # A function that doubles a value and wraps it in an Either
   double_either() {
     local value="$1"
     either_right $((value * 2))
   }
 
-  # A partial function: fails (Left) on input 0
   half_either() {
     local value="$1"
     if [ "$value" -eq 0 ]; then
@@ -98,22 +104,18 @@ test_monad_functions() {
     fi
   }
 
-  # Test return
   local result
   result=$(unit either 5)
   run_test "unit" "(either right 5)" "$result"
 
-  # Test bind with a Right value
   local result
   result=$(bind "(either right 10)" double_either)
   run_test "bind with right" "(either right 20)" "$result"
 
-  # Test bind with a Left value (propagates)
   local result
   result=$(bind "(either left error)" double_either)
   run_test "bind with left" "(either left error)" "$result"
 
-  # Test bind with a failing function
   local result
   result=$(bind "(either right 0)" half_either)
   run_test "bind with failing function" '(either left "division by zero")' "$result"
@@ -122,7 +124,6 @@ test_monad_functions() {
   bind "(either right 10)" this_function_does_not_exist >/dev/null 2>&1
   run_test "bind with unknown function" "$ERR_UNKNOWN_FUNCTION" "$?"
 
-  # Test bind with extra arguments
   add_either() {
     local value="$1"
     local addend="$2"
@@ -132,7 +133,6 @@ test_monad_functions() {
   result=$(bind "(either right 10)" add_either 5)
   run_test "bind with extra args" "(either right 15)" "$result"
 
-  # Test map with a plain function
   double() {
     local value="$1"
     echo $((value * 2))
@@ -163,7 +163,6 @@ test_monad_functions() {
   result=$(map '(either right "a b")' identity)
   run_test "map identity with quoted atom" '(either right "a b")' "$result"
 
-  # Test join
   local result
   result=$(join "(either right (either right 5))")
   run_test "join nested right" "(either right 5)" "$result"
@@ -192,7 +191,6 @@ test_monad_functions() {
   run_test "join with different tag fails" "$ERR_JOIN_TAG" "$?"
 }
 
-# Test MonadPlus functions
 test_monadplus_functions() {
   start_test_section "MonadPlus functions"
 
@@ -200,12 +198,10 @@ test_monadplus_functions() {
   result=$(mzero either)
   run_test "mzero" '(either left "")' "$result"
 
-  # First Right wins
   local result
   result=$(mplus "(either right 1)" "(either right 2)")
   run_test "mplus first right" "(either right 1)" "$result"
 
-  # Falls back to the second value
   local result
   result=$(mplus "(either left e1)" "(either right 2)")
   run_test "mplus left then right" "(either right 2)" "$result"
@@ -215,7 +211,6 @@ test_monadplus_functions() {
   run_test "mplus both left" "(either left e2)" "$result"
 }
 
-# Main function to run all tests
 run_either_monad_tests() {
   local file_name="$1"
   print_test_header "Testing Either monad functions" "$file_name"
@@ -228,7 +223,6 @@ run_either_monad_tests() {
   print_test_summary "Either monad functions"
 }
 
-# Run the tests if this script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_either_monad_tests "$0"
 fi

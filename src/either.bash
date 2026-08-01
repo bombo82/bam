@@ -1,17 +1,25 @@
 #!/bin/bash
 
-# Either monad-specific API for the Bash-Monad project
 #
-# Specific monad operations by type. These functions work only with a single
-# registered monad type and require a type_specific prefix:
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
 #
-#   either_left VALUE      - wraps a value in a Left (failure)
-#   either_right VALUE     - wraps a value in a Right (success)
-#   either_is_left VALUE   - checks whether a value is a Left (returns 0/1)
-#   either_is_right VALUE  - checks whether a value is a Right (returns 0/1)
-#   either_unwrap VALUE    - extracts the payload of an Either value
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-# Implementation of an Either monad on the core value encoding
+#
+# Either monad on the core value encoding — type-specific API
 #
 # Values: (either left V) represents a failure carrying information V
 #         (either right V) represents a successful result V
@@ -20,7 +28,12 @@
 # either_left/either_right accept raw strings or serialized values (similar
 # to list_create); unit remains strict and requires pre-serialized input.
 #
-# This file contains the basic monad functions
+#   either_left VALUE      - wraps a value in a Left (failure)
+#   either_right VALUE     - wraps a value in a Right (success)
+#   either_is_left VALUE   - checks whether a value is a Left (returns 0/1)
+#   either_is_right VALUE  - checks whether a value is a Right (returns 0/1)
+#   either_unwrap VALUE    - extracts the payload of an Either value
+#
 
 # Wraps a value in a Left (failure with information). Accepts either a raw
 # string (serialized automatically via atom_from_string if needed) or an
@@ -106,8 +119,7 @@ _either_map() {
   either_right "$result"
 }
 
-# Internal helper for join function (μ), the flattening operation of the monad
-# Flattens a nested Either: Right (Right x) -> Right x, Right (Left e) -> Left e
+# Flattens a nested Either (join, μ): Right (Right x) -> Right x, Right (Left e) -> Left e
 # A Left is propagated unchanged.
 # Strict contract: fails (non-zero status) if a Right payload is not an Either
 _either_join() {
@@ -123,23 +135,27 @@ _either_join() {
 
   local inner_kind
   inner_kind=$(_value_kind "$inner")
-  if [ "$inner_kind" = "either" ]; then
+  case "$inner_kind" in
+  either)
     echo "$inner"
-  elif [ "$inner_kind" = "atom" ]; then
+    ;;
+  atom)
     echo "either_join: expected a nested Either value, got: $either_value" >&2
     return "$ERR_JOIN_FLAT"
-  else
+    ;;
+  *)
     echo "either_join: nested value has a different tag: $either_value" >&2
     return "$ERR_JOIN_TAG"
-  fi
+    ;;
+  esac
 }
 
 _either_mzero() {
   either_left ""
 }
 
-# Internal helper for mplus function (mplus of the MonadPlus structure)
-# Left-biased choice: returns the first Right argument
+# mplus of the MonadPlus structure: left-biased choice, returns the first
+# Right argument
 _either_mplus() {
   local either_value1="$1"
   local either_value2="$2"

@@ -1,10 +1,10 @@
 # Contributing
 
-This document collects the conventions to follow when contributing to the Bash-Monad project: code style, testing, tooling, and the backlog of possible improvements. For the library's semantics, representational notes, design variants, limitations, and security considerations — the contract observed by its users — see [usage.md](usage.md).
+This document collects the conventions to follow when contributing to the BAM! project: code style, testing, tooling, and the backlog of possible improvements. For the library's semantics, representational notes, design variants, limitations, and security considerations — the contract observed by its users — see [usage.md](usage.md).
 
 ## Code Style Guidelines
 
-When contributing to the Bash-Monad project, follow these style guidelines. These rules reflect the actual conventions used throughout the `src/` codebase:
+When contributing to the BAM! project, follow these style guidelines. These rules reflect the actual conventions used throughout the `src/` codebase:
 
 1. **Function Naming**:
   - Use snake_case for function names
@@ -98,6 +98,15 @@ The project is validated with two external tools; both are expected to pass clea
   shfmt -w -i 2 src/ test/ examples/   # write mode: apply formatting
   ```
   Run `shfmt -d` before committing; `max_line_length` in `.editorconfig` applies to code only (Markdown prose is exempt).
+
+## Continuous Integration
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs on every push to `main` and on every pull request, with two jobs:
+
+- **Lint** (ubuntu-latest): ShellCheck and shfmt, with the exact commands shown above
+- **Test** (matrix over the official `bash:4.4` and `bash:5` container images): the full test suite via `bash test/run_all_tests.bash`, verifying the declared Bash 4+ compatibility
+
+A red pipeline means the change is not ready: run the same commands locally to reproduce and fix before pushing.
 
 ## Possible Improvements
 

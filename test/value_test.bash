@@ -1,17 +1,32 @@
 #!/bin/bash
 
-# Tests for the core value encoding
-# This file contains tests for atom serialization, s-expression parsing,
-# and the recursive value printer
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# Tests for the core value encoding: atom serialization, s-expression
+# parsing, and the recursive value printer
 
 # shellcheck disable=SC2329 # Some helpers are exercised only through sourced modules
-# Source the core value functions and test utilities
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash" >/dev/null 2>&1
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/test_utils.bash"
 
-# Test atom serialization round-trips
 test_atom_round_trip() {
   start_test_section "Atom round-trip"
 
@@ -80,11 +95,9 @@ test_atom_round_trip() {
   run_test "round-trip newline" "$original" "$result"
 }
 
-# Test s-expression parsing
 test_sexpr_parsing() {
   start_test_section "S-expression parsing"
 
-  # sexpr_head
   local result
   result=$(_sexpr_head "(maybe nothing)")
   run_test "sexpr_head maybe" "maybe" "$result"
@@ -97,7 +110,6 @@ test_sexpr_parsing() {
   result=$(_sexpr_head "(either right 42)")
   run_test "sexpr_head either" "either" "$result"
 
-  # sexpr_parts on a flat expression
   local result
   result=$(_sexpr_parts "(maybe just 5)")
   run_test "sexpr_parts flat" $'maybe\njust\n5' "$result"
@@ -112,12 +124,11 @@ test_sexpr_parsing() {
   result=$(_sexpr_parts '(list "a b" c)')
   run_test "sexpr_parts quoted atom with space" $'list\n"a b"\nc' "$result"
 
-  # sexpr_parts on the empty list (head only, no children)
+  # Empty list: head only, no children
   local result
   result=$(_sexpr_parts "(list)")
   run_test "sexpr_parts empty list" "list" "$result"
 
-  # sexpr_children
   local result
   result=$(_sexpr_children "(list 1 2 3)")
   run_test "sexpr_children flat list" $'1\n2\n3' "$result"
@@ -132,7 +143,6 @@ test_sexpr_parsing() {
   result=$(_sexpr_children "(maybe just (list 1 2))")
   run_test "sexpr_children nested" $'just\n(list 1 2)' "$result"
 
-  # value_kind
   local result
   result=$(_value_kind "5")
   run_test "value_kind atom" "atom" "$result"
@@ -146,22 +156,18 @@ test_sexpr_parsing() {
   run_test "value_kind list" "list" "$result"
 }
 
-# Test malformed input handling
 test_malformed_input() {
   start_test_section "Malformed input"
 
-  # Unbalanced parentheses
   _sexpr_parts "(list 1 2" >/dev/null 2>&1
   run_test "sexpr_parts unbalanced open paren" "$ERR_PARSE_PARENS" "$?"
 
   _sexpr_parts "(list 1))" >/dev/null 2>&1
   run_test "sexpr_parts unbalanced close paren" "$ERR_PARSE_PARENS" "$?"
 
-  # Unterminated quote
   _sexpr_parts '(list "a)' >/dev/null 2>&1
   run_test "sexpr_parts unterminated quote" "$ERR_PARSE_QUOTE" "$?"
 
-  # Not a parenthesized expression
   _sexpr_parts "list 1 2" >/dev/null 2>&1
   run_test "sexpr_parts not an expression" "$ERR_PARSE_NOT_EXPR" "$?"
 
@@ -169,7 +175,6 @@ test_malformed_input() {
   run_test "sexpr_head on atom" "$ERR_PARSE_NOT_EXPR" "$?"
 }
 
-# Test the recursive value printer
 test_print_value() {
   start_test_section "Print value"
 
@@ -248,11 +253,9 @@ test_print_value() {
   run_test "print_value with unknown tag" "$ERR_UNKNOWN_TYPE" "$?"
 }
 
-# Test payload decoding and compound validation helpers
 test_decode_and_compound() {
   start_test_section "Decode and compound helpers"
 
-  # decode_value decodes atoms to their raw string
   local result
   result=$(_decode_value "5")
   run_test "decode_value bare atom" "5" "$result"
@@ -270,7 +273,6 @@ test_decode_and_compound() {
   _decode_value "(ciao" >/dev/null 2>&1
   run_test "decode_value with malformed compound" "$ERR_PARSE_PARENS" "$?"
 
-  # is_compound recognizes well-formed compound values
   _is_compound "(list 1 2)"
   run_test "is_compound with list" "0" "$?"
 
@@ -288,7 +290,6 @@ test_decode_and_compound() {
   run_test "is_compound with malformed expression" "1" "$?"
 }
 
-# Test canonical normalization and semantic equality
 test_value_normalize() {
   start_test_section "Canonical normalization and semantic equality"
 
@@ -333,36 +334,28 @@ test_value_normalize() {
   run_test "value_equal with malformed input" "$ERR_PARSE_PARENS" "$?"
 }
 
-# Test boundary validation helpers
 test_require_helpers() {
   start_test_section "Boundary validation helpers"
 
-  # require_kind accepts a value of the expected tag
   _require_kind "(maybe just 5)" maybe
   run_test "require_kind with matching tag" "0" "$?"
 
-  # require_kind fails with a contract error on a different tag
   _require_kind "(list 1)" maybe >/dev/null 2>&1
   run_test "require_kind with wrong tag" "$ERR_WRONG_TAG" "$?"
 
-  # require_kind propagates parse errors on malformed input
   _require_kind "(list 1" maybe >/dev/null 2>&1
   run_test "require_kind with malformed input" "$ERR_PARSE_PARENS" "$?"
 
-  # require_function accepts an existing function
   _require_function _require_kind
   run_test "require_function with existing function" "0" "$?"
 
-  # require_function fails with a dispatch error on unknown names
   _require_function this_function_does_not_exist >/dev/null 2>&1
   run_test "require_function with unknown function" "$ERR_UNKNOWN_FUNCTION" "$?"
 }
 
-# Test single-value validation
 test_is_value() {
   start_test_section "Single-value validation"
 
-  # Valid single values
   _is_value "5"
   run_test "is_value with bare atom" "0" "$?"
 
@@ -378,7 +371,7 @@ test_is_value() {
   _is_value "(maybe just (list 1 2))"
   run_test "is_value with nested compound value" "0" "$?"
 
-  # Invalid: multiple values or malformed
+  # Invalid: multiple values or malformed input
   _is_value "1 2"
   run_test "is_value with two bare atoms" "1" "$?"
 
@@ -395,7 +388,6 @@ test_is_value() {
   run_test "is_value with empty string" "1" "$?"
 }
 
-# Main function to run all tests
 run_value_tests() {
   local file_name="$1"
   print_test_header "Testing core value encoding" "$file_name"
@@ -412,7 +404,6 @@ run_value_tests() {
   print_test_summary "Core value encoding"
 }
 
-# Run the tests if this script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_value_tests "$0"
 fi

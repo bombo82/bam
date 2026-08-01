@@ -1,5 +1,23 @@
 #!/bin/bash
 
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 # Tests for nesting of monadic values
 #
 # The structured encoding makes nesting representable, both of the same
@@ -7,13 +25,11 @@
 # (List (Maybe a), Maybe (List a), Either e (List a)). These tests verify
 # that nested values are distinct, printable, and work with the uniform API.
 
-# Source the uniform monad API and test utilities
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/../src/monad.bash" >/dev/null 2>&1
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/test_utils.bash"
 
-# Test nesting of monads of the same type
 test_same_type_nesting() {
   start_test_section "Same-type nesting"
 
@@ -25,12 +41,10 @@ test_same_type_nesting() {
     run_test "Just Nothing differs from Nothing" "distinct" "equal"
   fi
 
-  # join flattens Just Nothing into Nothing
   local result
   result=$(join "$just_nothing")
   run_test "join on Just Nothing" "$NOTHING" "$result"
 
-  # join flattens Just (Just 5) into Just 5
   local result
   result=$(join "(maybe just (maybe just 5))")
   run_test "join on Just (Just 5)" "(maybe just 5)" "$result"
@@ -43,7 +57,6 @@ test_same_type_nesting() {
     run_test "(list (list)) differs from (list)" "distinct" "equal"
   fi
 
-  # join flattens a list of lists
   local result
   result=$(join "(list (list 1 2) (list 3) (list))")
   run_test "join on list of lists" "(list 1 2 3)" "$result"
@@ -58,7 +71,6 @@ test_same_type_nesting() {
   run_test "bind on Just Nothing with identity" "$NOTHING" "$result"
 }
 
-# Test nesting of monads of different types
 test_cross_type_nesting() {
   start_test_section "Cross-type nesting"
 
@@ -103,7 +115,6 @@ test_cross_type_nesting() {
   run_test "mplus with nested values" "(maybe just (list 1 2))" "$result"
 }
 
-# Test printing of nested values
 test_nested_printing() {
   start_test_section "Nested printing"
 
@@ -124,7 +135,6 @@ test_nested_printing() {
   run_test "print deeply nested" "[[1], Just [2, 3]]" "$result"
 }
 
-# Test mplus with mixed type tags
 test_mixed_tags() {
   start_test_section "Mixed type tags"
 
@@ -136,7 +146,6 @@ test_mixed_tags() {
   run_test "mplus with list and either" "$ERR_TAG_MISMATCH" "$?"
 }
 
-# Main function to run all tests
 run_nesting_tests() {
   local file_name="$1"
   print_test_header "Testing nesting of monadic values" "$file_name"
@@ -149,7 +158,6 @@ run_nesting_tests() {
   print_test_summary "Nesting of monadic values"
 }
 
-# Run the tests if this script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_nesting_tests "$0"
 fi

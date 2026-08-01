@@ -1,11 +1,31 @@
 #!/bin/bash
 
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+#
 # Examples of using the Either monad through the uniform monad API
 # (unit, bind, map, mzero, mplus, print_value work with any monad type)
 # Unlike Maybe, Either carries information about the failure in its Left value.
 #
 # Each example prints the commands that produce the result (prefixed with $),
 # followed by the output of each command.
+#
 
 # Source the uniform monad API (also sources the Either monad implementation)
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
@@ -18,8 +38,6 @@ run() {
   result=$("$@")
   echo "$result"
 }
-
-# Example functions that work with the Either monad
 
 # Safely divide two numbers, returns Left with an error message if division by zero
 # Usage: safe_divide NUMERATOR DENOMINATOR
@@ -52,8 +70,6 @@ multiply_either() {
   unit either $((value * multiplier))
 }
 
-# Example usage
-
 echo "Example 1: Wrapping a value with unit"
 run unit either 10
 run print_value "$result"
@@ -67,7 +83,6 @@ run safe_divide 10 0
 run print_value "$result"
 
 echo -e "\nExample 4: Chaining operations with bind"
-# Start with 10, add 5, then multiply by 2
 run unit either 10
 run bind "$result" add_either 5
 run bind "$result" multiply_either 2
@@ -97,6 +112,7 @@ echo -e "\nExample 8: Extracting the error message from a Left"
 run safe_divide 10 0
 if either_is_left "$result"; then
   run either_unwrap "$result"
-  run atom_to_string "$result"
+  # either_unwrap returns the serialized (quoted) atom; decoding requires the internal helper
+  run _atom_to_string "$result"
   echo "Error: $result"
 fi

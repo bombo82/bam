@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint (ShellCheck + shfmt)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck and shfmt
+        run: sudo apt-get update && sudo apt-get install -y shellcheck shfmt
+
+      - name: ShellCheck
+        run: shellcheck src/*.bash test/*.bash examples/*.bash
+
+      - name: shfmt
+        run: shfmt -d -i 2 src/ test/ examples/
+
+  test:
+    name: Tests (Bash ${{ matrix.bash }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bash: ["4.4", "5"]
+    container: bash:${{ matrix.bash }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run test suite
+        run: bash test/run_all_tests.bash

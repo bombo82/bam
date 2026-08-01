@@ -1,16 +1,25 @@
 #!/bin/bash
 
-# Maybe monad-specific API for the Bash-Monad project
 #
-# Specific monad operations by type. These functions work only with a single
-# registered monad type and require a type_specific prefix:
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
 #
-#   maybe_just VALUE       - wraps a value in a Just
-#   maybe_unwrap VALUE     - extracts the payload of a Just value
-#   maybe_is_nothing VALUE - checks whether a value is Nothing (returns 0/1)
-#   maybe_is_just VALUE    - checks whether a value is a Just (returns 0/1)
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-# Implementation of a Maybe monad on the core value encoding
+#
+# Maybe monad on the core value encoding — type-specific API
 #
 # Values: (maybe nothing) represents the absence of a value;
 #         (maybe just V) represents a present value V, where V may be a raw
@@ -19,9 +28,13 @@
 #         or serialized values (similar to list_create/either_left); unit remains
 #         strict and requires pre-serialized input.
 #
-# This file contains the basic monad functions
+#   maybe_just VALUE       - wraps a value in a Just
+#   maybe_unwrap VALUE     - extracts the payload of a Just value
+#   maybe_is_nothing VALUE - checks whether a value is Nothing (returns 0/1)
+#   maybe_is_just VALUE    - checks whether a value is a Just (returns 0/1)
+#
 
-# Constant for the absence of a value (Nothing in Haskell)
+# Nothing in Haskell
 NOTHING="(maybe nothing)"
 
 # Wraps a value in a Just. Accepts either a raw string (serialized automatically
@@ -93,8 +106,7 @@ _maybe_map() {
   maybe_just "$result"
 }
 
-# Internal helper for join function (μ), the flattening operation of the monad
-# Flattens a nested Maybe: Just (Just x) -> Just x, Just Nothing -> Nothing
+# Flattens a nested Maybe (join, μ): Just (Just x) -> Just x, Just Nothing -> Nothing
 # Strict contract: fails (non-zero status) if the payload is not a Maybe value
 _maybe_join() {
   local maybe_value="$1"
@@ -106,26 +118,29 @@ _maybe_join() {
 
   local inner
   inner=$(maybe_unwrap "$maybe_value") || return $?
-
   local inner_kind
   inner_kind=$(_value_kind "$inner")
-  if [ "$inner_kind" = "maybe" ]; then
+  case "$inner_kind" in
+  maybe)
     echo "$inner"
-  elif [ "$inner_kind" = "atom" ]; then
+    ;;
+  atom)
     echo "maybe_join: expected a nested Maybe value, got: $maybe_value" >&2
     return "$ERR_JOIN_FLAT"
-  else
+    ;;
+  *)
     echo "maybe_join: nested value has a different tag: $maybe_value" >&2
     return "$ERR_JOIN_TAG"
-  fi
+    ;;
+  esac
 }
 
 _maybe_mzero() {
   echo "$NOTHING"
 }
 
-# Internal helper for mplus function (mplus of the MonadPlus structure)
-# Left-biased choice: returns the first argument that is not Nothing
+# mplus of the MonadPlus structure: left-biased choice, returns the first
+# argument that is not Nothing
 _maybe_mplus() {
   local maybe_value1="$1"
   local maybe_value2="$2"

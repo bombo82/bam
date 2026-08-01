@@ -1,28 +1,43 @@
 #!/bin/bash
 
-# Test file for test_utils.bash
-# This script tests the utility functions used for testing
+#
+# BAM! Bourne Again Monad! A monad-like construct for bash.
+# Copyright (C) 2026 Gianni Bombelli (bombo82) <bombo82@giannibombelli.it>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# Tests for the shared test utilities in test_utils.bash
 
 # shellcheck disable=SC2001 # ANSI stripping needs a regex character class; ${var//} cannot express it
-# Source the test utilities
 # shellcheck source=/dev/null # Dynamic path resolved at runtime; cannot be followed statically
 source "$(dirname "${BASH_SOURCE[0]}")/test_utils.bash"
 
-# We'll use these variables to track our own test results
+# This suite keeps its own counters, independent of the harness counters it
+# resets while testing them
 UTILS_TEST_PASSED=0
 UTILS_TEST_FAILED=0
 
-# Test the run_test function
 test_run_test() {
   start_test_section "Run test function"
 
-  # Reset counters before testing
+  # Start from known counter values
   TEST_COUNT=0
   PASSED_COUNT=0
   FAILED_COUNT=0
 
-  # Test run_test with passing test
-  # We'll redirect the output to a temporary file to check it later
+  # Capture output in a temp file to inspect what run_test prints
   local temp_file
   temp_file=$(mktemp)
   run_test "Sample passing test" "expected" "expected" >"$temp_file" 2>&1
@@ -30,7 +45,6 @@ test_run_test() {
   output=$(<"$temp_file")
   rm "$temp_file"
 
-  # Check if output contains "PASSED"
   if [[ "$output" == *"PASSED"* ]]; then
     print_passed_test_result "run_test correctly identifies passing tests"
     UTILS_TEST_PASSED=$((UTILS_TEST_PASSED + 1))
@@ -39,8 +53,6 @@ test_run_test() {
     UTILS_TEST_FAILED=$((UTILS_TEST_FAILED + 1))
   fi
 
-  # Test run_test with failing test
-  # We'll redirect the output to a temporary file to check it later
   local temp_file
   temp_file=$(mktemp)
   run_test "Sample failing test" "expected" "actual" >"$temp_file" 2>&1
@@ -48,7 +60,6 @@ test_run_test() {
   output=$(<"$temp_file")
   rm "$temp_file"
 
-  # Check if output contains "FAILED" and failure details
   if [[ "$output" == *"FAILED"* && "$output" == *"Expected:"* && "$output" == *"Actual:"* ]]; then
     print_passed_test_result "run_test correctly identifies failing tests"
     UTILS_TEST_PASSED=$((UTILS_TEST_PASSED + 1))
@@ -66,7 +77,6 @@ test_run_test() {
     UTILS_TEST_FAILED=$((UTILS_TEST_FAILED + 1))
   fi
 
-  # Check if PASSED_COUNT is incremented correctly
   if [ "$PASSED_COUNT" -eq 1 ]; then
     print_passed_test_result "run_test correctly increments PASSED_COUNT"
     UTILS_TEST_PASSED=$((UTILS_TEST_PASSED + 1))
@@ -75,7 +85,6 @@ test_run_test() {
     UTILS_TEST_FAILED=$((UTILS_TEST_FAILED + 1))
   fi
 
-  # Check if FAILED_COUNT is incremented correctly
   if [ "$FAILED_COUNT" -eq 1 ]; then
     print_passed_test_result "run_test correctly increments FAILED_COUNT"
     UTILS_TEST_PASSED=$((UTILS_TEST_PASSED + 1))
@@ -85,11 +94,10 @@ test_run_test() {
   fi
 }
 
-# Test the print_separator function
 test_print_separator() {
   start_test_section "Print separator function"
 
-  # Capture output of print_separator and remove color codes
+  # Strip ANSI codes before comparing
   local output
   output=$(print_separator | sed 's/\x1b\[[0-9;]*m//g')
   local expected="----------------------------------------"
@@ -105,11 +113,9 @@ test_print_separator() {
   fi
 }
 
-# Test the print_test_header function
 test_print_test_header() {
   start_test_section "Print test header function"
 
-  # Capture output of print_test_header and remove color codes
   local temp_file
   temp_file=$(mktemp)
   print_test_header "Test Header Title" >"$temp_file"
@@ -117,7 +123,6 @@ test_print_test_header() {
   output=$(cat "$temp_file" | sed 's/\x1b\[[0-9;]*m//g')
   rm "$temp_file"
 
-  # Check if output contains the expected header format
   if [[ "$output" == *"=================================================="* &&
     "$output" == *"Test Header Title"* &&
     "$output" == *"=================================================="* ]]; then
@@ -131,34 +136,25 @@ test_print_test_header() {
   fi
 }
 
-# Test the print_test_summary function
 test_print_test_summary() {
   start_test_section "Print test summary function"
 
-  # Reset counters for this test
   TEST_COUNT=5
   PASSED_COUNT=5
   FAILED_COUNT=0
 
-  # We need to use a different approach to capture both output and return value
-  # Create a temporary file for the output
   local temp_file
   temp_file=$(mktemp)
 
-  # Run the function and capture its return value
   print_test_summary "All Passing Tests" >"$temp_file"
   local return_value=$?
 
-  # Read the output from the temporary file
   local output
   output=$(<"$temp_file")
-  # Remove color codes
   output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
 
-  # Remove the temporary file
   rm "$temp_file"
 
-  # Check if output contains success message
   if [[ "$output" == *"All tests passed"* && $return_value -eq 0 ]]; then
     echo "✓ print_test_summary correctly reports all tests passing - PASSED"
     UTILS_TEST_PASSED=$((UTILS_TEST_PASSED + 1))
@@ -170,30 +166,23 @@ test_print_test_summary() {
     UTILS_TEST_FAILED=$((UTILS_TEST_FAILED + 1))
   fi
 
-  # Reset counters for failing test
+  # Reset counters for the failing case
   TEST_COUNT=5
   PASSED_COUNT=3
   FAILED_COUNT=2
 
-  # We need to use a different approach to capture both output and return value
-  # Create a temporary file for the output
   local temp_file
   temp_file=$(mktemp)
 
-  # Run the function and capture its return value
   print_test_summary "Some Failing Tests" >"$temp_file"
   local return_value=$?
 
-  # Read the output from the temporary file
   local output
   output=$(<"$temp_file")
-  # Remove color codes
   output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
 
-  # Remove the temporary file
   rm "$temp_file"
 
-  # Check if output contains failure message
   if [[ "$output" == *"Some tests failed"* && $return_value -eq 1 ]]; then
     echo "✓ print_test_summary correctly reports some tests failing - PASSED"
     UTILS_TEST_PASSED=$((UTILS_TEST_PASSED + 1))
@@ -206,18 +195,15 @@ test_print_test_summary() {
   fi
 }
 
-# Main function to run all tests
 run_test_utils_tests() {
   local file_name="$1"
   print_test_header "Testing the testing utils" "$file_name"
 
-  # Run all tests
   test_run_test
   test_print_separator
   test_print_test_header
   test_print_test_summary
 
-  # Calculate pass percentage
   UTILS_PASS_PERCENTAGE=0
   if [ $((UTILS_TEST_PASSED + UTILS_TEST_FAILED)) -gt 0 ]; then
     UTILS_PASS_PERCENTAGE=$(((UTILS_TEST_PASSED * 100) / (UTILS_TEST_PASSED + UTILS_TEST_FAILED)))
@@ -241,7 +227,7 @@ run_test_utils_tests() {
   fi
 }
 
-# Run the tests if this script is executed directly
+# Run the tests if this script is executed directly, propagating its exit code
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   run_test_utils_tests "$0"
   exit $?
